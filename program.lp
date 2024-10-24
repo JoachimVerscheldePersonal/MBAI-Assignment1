@@ -1,18 +1,22 @@
 % Truck, depot and customers
 truck(t1).
 depot(d1).
-customer(c1).
-customer(c2).
+customer(c1;c2).
 
-% Locations
-location(d1).
-location(c1).
-location(c2).
+% Vertices
+vertex(d1;c1;c2;v1;v2;v3;v4;v5;v6;v7;v8;v9).
 
-% Distances between locations (in minutes)
-distance(d1, c1, 30).
-distance(c1, c2, 20).
-distance(c2, d1, 40).
+% Weighted edges
+edge(d1,v1,10)
+edge(d1,v7,20)
+edge(v1,v2,30)
+edge(v2,v3,20)
+edge(v2,v3,10)
+
+% adjacent vertices
+adj(V1,V2) :- vertex(V1), vertex(V2), edge(V1,V2)
+% commutative property
+adj(V1,V2) :- adj(V2,V1)
 
 % Time windows for the deliveries at the customers
 time_window(c1, 60, 120).  % customer 1 expectes the delivery between 60 and 120 minutes
@@ -22,7 +26,7 @@ time_window(c2, 90, 180).  % customer 2 expectes the delivery between 90 and 180
 step(0..n).
 
 % fluents
-fluent(inertial, at(T, L)) :- truck(T), location(L).
+fluent(inertial, at(T, N)) :- truck(T), location(L).
 
 % Closed world assumption
 -holds(F,I) :- fluent(inertial, F), not holds(F,I), step(I).
@@ -32,11 +36,11 @@ hold(F, I+1) :- hold(F,I),  not -hold(F,I+1), fluent(inertial, F).
 -hold(F, I+1) :- -hold(F,I), not hold(F,I+1), fluent(inertial, F).
 
 % Causal laws
-
+holds(at(T,V2),I+1):- occurs(move(T,V1,V2),I) V1 != V2,  adj(V1,V2), truck(T), step(I)
 % State constraints
-
 % Executability conditions
-
+% Truck has to keep moving
+ 
 % % Action
 
 % occurs(move(T, StartLoc, EndLoc)):- 
@@ -96,7 +100,7 @@ hold(F, I+1) :- hold(F,I),  not -hold(F,I+1), fluent(inertial, F).
 % % Optimalisatie: Minimaliseer de totale levertijd en penalties
 % #minimize { T : holds(delivered(C), T) ; Penalty : penalty(C, Penalty) }.
 
-% % Output regels
-% #show holds/2.
-% #show occurs/2.
-% #show success/1.
+% Output regels
+#show holds/2.
+#show occurs/2.
+#show success/1.
