@@ -4,19 +4,34 @@ depot(d1).
 customer(c1;c2).
 
 % Vertices
-vertex(d1;c1;c2;v1;v2;v3;v4;v5;v6;v7;v8;v9).
+vertex(d1;c1;c2;v1;v2;v3;v4;v5;v6;v7;v8;v9;v10).
 
 % Weighted edges
-edge(d1,v1,10)
-edge(d1,v7,20)
-edge(v1,v2,30)
-edge(v2,v3,20)
-edge(v2,v3,10)
+edge(d1,v1,38).
+edge(d1,v10,65).
+edge(d1,v8,40).
+edge(v1,v2,50).
+edge(v2,v3,60).
+edge(v2,v7,30).
+edge(v3,v4,38).
+edge(v3,c2,40).
+edge(c2,v5,80).
+edge(v5,v4,35).
+edge(v5,v7,90).
+edge(v5,v6,75).
+edge(v6,v7,65).
+edge(v6,c1,39).
+edge(c1,v7,80).
+edge(c1,v9,60).
+edge(v9,v8,40).
+edge(v9,v10,60).
+edge(v8,v7,40).
+edge(v8,d1,40).
 
 % adjacent vertices
-adj(V1,V2) :- vertex(V1), vertex(V2), edge(V1,V2)
+adj(V1,V2) :- vertex(V1), vertex(V2), edge(V1,V2).
 % commutative property
-adj(V1,V2) :- adj(V2,V1)
+adj(V1,V2) :- adj(V2,V1).
 
 % Time windows for the deliveries at the customers
 time_window(c1, 60, 120).  % customer 1 expectes the delivery between 60 and 120 minutes
@@ -26,7 +41,7 @@ time_window(c2, 90, 180).  % customer 2 expectes the delivery between 90 and 180
 step(0..n).
 
 % fluents
-fluent(inertial, at(T, N)) :- truck(T), location(L).
+fluent(inertial, at(T, V)) :- truck(T), location(L), vertex(V).
 
 % Closed world assumption
 -holds(F,I) :- fluent(inertial, F), not holds(F,I), step(I).
@@ -36,9 +51,13 @@ hold(F, I+1) :- hold(F,I),  not -hold(F,I+1), fluent(inertial, F).
 -hold(F, I+1) :- -hold(F,I), not hold(F,I+1), fluent(inertial, F).
 
 % Causal laws
-holds(at(T,V2),I+1):- occurs(move(T,V1,V2),I) V1 != V2,  adj(V1,V2), truck(T), step(I)
+holds(at(T,V2),I+1):- occurs(move(T,V1,V2),I), V1 != V2,  adj(V1,V2), truck(T), step(I).
 % State constraints
 % Executability conditions
+
+% Start state
+holds(at(t1,d1),0).
+occurs(move(t1,d1,v1),0).
 % Truck has to keep moving
  
 % % Action
