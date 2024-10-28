@@ -29,38 +29,52 @@ edge(v8,v7,40).
 edge(v8,d1,40).
 
 % adjacent vertices
-adj(V1,V2) :- vertex(V1), vertex(V2), edge(V1,V2).
+adj(V1,V2) :- vertex(V1), vertex(V2), edge(V1,V2,_).
 % commutative property
 adj(V1,V2) :- adj(V2,V1).
 
-% Time windows for the deliveries at the customers
-time_window(c1, 60, 120).  % customer 1 expectes the delivery between 60 and 120 minutes
-time_window(c2, 90, 180).  % customer 2 expectes the delivery between 90 and 180 minutes
+% % Time windows for the deliveries at the customers
+% time_window(c1, 60, 120).  % customer 1 expectes the delivery between 60 and 120 minutes
+% time_window(c2, 90, 180).  % customer 2 expectes the delivery between 90 and 180 minutes
 
-#const n = 300.
+#const n = 10.
 step(0..n).
 
 % fluents
-fluent(inertial, at(T, V)) :- truck(T), location(L), vertex(V).
+fluent(inertial, at(T, V)) :- truck(T), vertex(V).
 
 % Closed world assumption
 -holds(F,I) :- fluent(inertial, F), not holds(F,I), step(I).
 
 % Inertia axioms:
-hold(F, I+1) :- hold(F,I),  not -hold(F,I+1), fluent(inertial, F).
--hold(F, I+1) :- -hold(F,I), not hold(F,I+1), fluent(inertial, F).
+holds(F, I+1) :- holds(F,I),  not -holds(F,I+1), fluent(inertial, F).
+-holds(F, I+1) :- -holds(F,I), not holds(F,I+1), fluent(inertial, F).
 
 % Causal laws
-holds(at(T,V2),I+1):- occurs(move(T,V1,V2),I), V1 != V2,  adj(V1,V2), truck(T), step(I).
+holds(at(T,V2),I+1):- occurs(move(T,V1,V2),I), V1 != V2,  adj(V1,V2), truck(T), step(I), I<n.
 % State constraints
+% Truck can only be at one location at a time
+:- holds(at(T,V1),I), holds(at(T, V2),I), V1 != V2.
+% Customer must be delivered at some point
+delivered(C) :- holds(at(_,C), I), customer(C), step(I), I < n.
 % Executability conditions
-
+% Cannot move to the same location
+:- occurs(move(T,V1,V2),I), V1 = V2, truck(T), step(I), vertex(V1), vertex(V2).
 % Start state
 holds(at(t1,d1),0).
-occurs(move(t1,d1,v1),0).
-% Truck has to keep moving
- 
-% % Action
+% Goal
+goal :- customer(C) : delivered(C).
+% Guess actions
+% {occurs(move(T,V1,V2),I)}=1 :- truck(T), adj(V1,V2), step(I), not goal, I<n.
+success :- goal.
+:- not success.
+
+% Output regels
+#show holds/2.
+#show occurs/2.
+
+
+%Action
 
 % occurs(move(T, StartLoc, EndLoc)):- 
 % % Causal Law: If an action occurs at time I, the position of the truck changes
@@ -118,8 +132,3 @@ occurs(move(t1,d1,v1),0).
 
 % % Optimalisatie: Minimaliseer de totale levertijd en penalties
 % #minimize { T : holds(delivered(C), T) ; Penalty : penalty(C, Penalty) }.
-
-% Output regels
-#show holds/2.
-#show occurs/2.
-#show success/1.
