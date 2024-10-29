@@ -33,41 +33,45 @@ adj(V1,V2) :- vertex(V1), vertex(V2), edge(V1,V2,_).
 % commutative property
 adj(V1,V2) :- adj(V2,V1).
 
-% % Time windows for the deliveries at the customers
-% time_window(c1, 60, 120).  % customer 1 expectes the delivery between 60 and 120 minutes
-% time_window(c2, 90, 180).  % customer 2 expectes the delivery between 90 and 180 minutes
-
 #const n = 10.
 step(0..n).
 
 % fluents
-fluent(inertial, at(T, V)) :- truck(T), vertex(V).
-
-% Closed world assumption
--holds(F,I) :- fluent(inertial, F), not holds(F,I), step(I).
+fluent(at(T, V), inertial) :- truck(T), vertex(V).
 
 % Inertia axioms:
-holds(F, I+1) :- holds(F,I),  not -holds(F,I+1), fluent(inertial, F).
--holds(F, I+1) :- -holds(F,I), not holds(F,I+1), fluent(inertial, F).
+holds(F, I+1) :- holds(F,I),  not -holds(F,I+1), fluent(F, inertial).
+-holds(F, I+1) :- -holds(F,I), not holds(F,I+1), fluent(F, inertial).
 
-% Causal laws
-holds(at(T,V2),I+1):- occurs(move(T,V1,V2),I), V1 != V2,  adj(V1,V2), truck(T), step(I), I<n.
-% State constraints
-% Truck can only be at one location at a time
-:- holds(at(T,V1),I), holds(at(T, V2),I), V1 != V2.
-% Customer must be delivered at some point
-delivered(C) :- holds(at(_,C), I), customer(C), step(I), I < n.
-% Executability conditions
-% Cannot move to the same location
-:- occurs(move(T,V1,V2),I), V1 = V2, truck(T), step(I), vertex(V1), vertex(V2).
+% Closed world assumption
+-holds(F,I) :- fluent(F, inertial), not holds(F,I), step(I).
+-occurs(A,I) :- action(A), not occurs(A,I), step(I).
+
 % Start state
 holds(at(t1,d1),0).
-% Goal
-goal :- customer(C) : delivered(C).
-% Guess actions
-% {occurs(move(T,V1,V2),I)}=1 :- truck(T), adj(V1,V2), step(I), not goal, I<n.
-success :- goal.
-:- not success.
+
+% Actions
+occurs(A, I) :- action(A), step(I), I<n.
+
+% Action: Truck moves from location From to location To
+action(move(T,V1,V2)) :- truck(T), vertex(V1), vertex(V2), V1 != V2.
+
+% Causal laws
+holds(at(T,V2),I+1) :- occurs(move(T,V1,V2),I), adj(V1,V2), truck(T), step(I), I<n.
+% State constraints
+% Truck can only be at one location at a time
+% :- holds(at(T,V1),I), holds(at(T, V2),I), V1 != V2.
+% Customer must be delivered at some point
+% delivered(C) :- holds(at(_,C), I), customer(C), step(I), I < n.
+% % Executability conditions
+
+
+% % Goal
+% goal :- customer(C) : delivered(C).
+% % Guess actions
+% % {occurs(move(T,V1,V2),I)}=1 :- truck(T), adj(V1,V2), step(I), not goal, I<n.
+% success :- goal.
+% :- not success.
 
 % Output regels
 #show holds/2.
