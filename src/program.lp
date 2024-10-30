@@ -28,39 +28,39 @@ edge(v9,v10,60).
 edge(v8,v7,40).
 edge(v8,d1,40).
 
-% adjacent vertices
+% Adjacent vertices
 adj(V1,V2) :- vertex(V1), vertex(V2), edge(V1,V2,_).
-% commutative property
+% Commutative property
 adj(V1,V2) :- adj(V2,V1).
 
 #const n = 10.
 step(0..n).
 
-% fluents
+% Fluents
 fluent(at(T, V), inertial) :- truck(T), vertex(V).
-
-% Inertia axioms:
-holds(F, I+1) :- holds(F,I),  not -holds(F,I+1), fluent(F, inertial).
--holds(F, I+1) :- -holds(F,I), not holds(F,I+1), fluent(F, inertial).
-
-% Closed world assumption
--holds(F,I) :- fluent(F, inertial), not holds(F,I), step(I).
+% Actions:
+action(move(T,V1,V2)):- truck(T), adj(V1,V2), V1 != V2.
+% Closed world assumption:
+-holds(at(T,V),I) :- fluent(at(T,V),inertial), not holds(at(T,V),I), step(I).
 -occurs(A,I) :- action(A), not occurs(A,I), step(I).
+% Causal laws:
+holds(at(T,V2),I+1) :- occurs(move(T,V1,V2),I), adj(V1,V2), truck(T), step(I).
+% State constraints:
+% Truck can only be in one location at a time
+V1 = V2 :- holds(at(T, V1),I), holds(at(T, V2),I), truck(T), vertex(V1), vertex(V2), step(I).
+% Executability conditions
+% Cannot move from a vertex when the truck is not there
+:- occurs(move(T,V1,V2),I), not holds(at(T,V1),I), truck(T), vertex(V1), vertex(V2), step(I).
+:- occurs(move(T,V1,V2),I), not adj(V1,V2), truck(T), step(I).
 
 % Start state
 holds(at(t1,d1),0).
+occurs(move(t1,d1,v1),0).
 
-% Actions
-occurs(A, I) :- action(A), step(I), I<n.
+%inertia axioms zorgen voor fouten en wss ifv de CWA
 
-% Action: Truck moves from location From to location To
-action(move(T,V1,V2)) :- truck(T), vertex(V1), vertex(V2), V1 != V2.
-
-% Causal laws
-holds(at(T,V2),I+1) :- occurs(move(T,V1,V2),I), adj(V1,V2), truck(T), step(I), I<n.
-% State constraints
-% Truck can only be at one location at a time
-% :- holds(at(T,V1),I), holds(at(T, V2),I), V1 != V2.
+#show holds/2.
+#show occurs/2.
 % Customer must be delivered at some point
 % delivered(C) :- holds(at(_,C), I), customer(C), step(I), I < n.
 % % Executability conditions
@@ -74,9 +74,6 @@ holds(at(T,V2),I+1) :- occurs(move(T,V1,V2),I), adj(V1,V2), truck(T), step(I), I
 % :- not success.
 
 % Output regels
-#show holds/2.
-#show occurs/2.
-
 
 %Action
 
