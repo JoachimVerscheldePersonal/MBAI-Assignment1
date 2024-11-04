@@ -38,18 +38,18 @@ step(0..n).
 
 % Fluents
 fluent(at(T, V), inertial) :- truck(T), vertex(V).
-fluent(delivered(C), inertial):- customer(C).
+fluent(delivered(C), defined):- customer(C).
 % Actions:
 action(move(T,V1,V2)):- truck(T), adj(V1,V2), V1 != V2.
 % Closed world assumption:
--holds(at(T,V),I) :- fluent(at(T,V),inertial), not holds(at(T,V),I), step(I).
--holds(delivered(C),I) :- fluent(delivered(C),inertial), not holds(delivered(C),I), step(I).
+-holds(F,I) :- fluent(F,inertial), not holds(F,I), step(I).
+
 -occurs(A,I) :- action(A), not occurs(A,I), step(I).
 % Causal laws:
 holds(at(T,V2),I+1) :- occurs(move(T,V1,V2),I), adj(V1,V2), truck(T), step(I).
 % State constraints:
 % Truck can only be in one location at a time
-V1 = V2 :- holds(at(T, V1),I), holds(at(T, V2),I), truck(T), vertex(V1), vertex(V2), step(I).
+:- holds(at(T, V1),I), holds(at(T, V2),I), truck(T), vertex(V1), vertex(V2), step(I), V1 != V2.
 % a customer is delivered if the truck is at the customer's location
 holds(delivered(C),I) :- holds(at(T,C),I), customer(C), truck(T), step(I).
 holds(delivered(C), I+1) :- holds(delivered(C), I), step(I).
@@ -59,24 +59,38 @@ holds(delivered(C), I+1) :- holds(delivered(C), I), step(I).
 :- occurs(move(T,V1,V2),I), not adj(V1,V2), truck(T), step(I).
 
 % Inertia axioms:
-hold(F, I+1) :- hold(F,I),  not -hold(F,I+1), fluent(F,inertial).
--hold(F, I+1) :- -hold(F,I),  not hold(F,I+1), fluent(F,inertial).
+holds(F, I+1) :- holds(F,I),  not -holds(F,I+1), fluent(F,inertial), step(I).
+-holds(F, I+1) :- -holds(F,I),  not holds(F,I+1), fluent(F,inertial), step(I).
 
 % Start state
 holds(at(t1,d1),0).
+-holds(delivered(c1),0).
+-holds(delivered(c2),0).
+
 % occurs(move(t1,d1,v1),0).
 % occurs(move(t1,v1,v2),1).
 % occurs(move(t1,v2,v3),2).
 % occurs(move(t1,v3,c2),3).
 % occurs(move(t1,c2,v5),4).
+% occurs(move(t1,v5,v6),5).
+% occurs(move(t1,v6,c1),6).
+% occurs(move(t1,c1,v9),7).
+% occurs(move(t1,v9,v8),8).
+% occurs(move(t1,v8,d1),9).
+% occurs(move(t1,d1,v10),10).
 
 % Goal
-goal(I) :- step(I), customer(C) : holds(delivered(C),I).
+goal(I) :- step(I), holds(delivered(c1),I), holds(delivered(c2),I).
+
+success :- goal(I), I<=n.
+
+:- not success.
 
 % Guess actions
-{occurs(move(T,V1,V2),I)}=1 :- truck(T), adj(V1,V2), step(I), not goal(I).
-success(I) :- goal(I), step(I).
-:- not success(I), step(I).
+{occurs(A,I): action(A)}=1 :- step(I), not goal(I), I < n.
 
-#show holds/2.
+% #show holds/2.
+% #show delivered/1.
+% #show goal/1.
+% #show success/0.
 #show occurs/2.
