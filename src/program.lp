@@ -28,17 +28,22 @@ edge(v9,v10,60).
 edge(v8,v7,40).
 edge(v8,d1,40).
 
+% Commutative property
+edge(V1,V2,D) :- edge(V2,V1,D).
+
 % Adjacent vertices
 adj(V1,V2) :- vertex(V1), vertex(V2), edge(V1,V2,_).
-% Commutative property
-adj(V1,V2) :- adj(V2,V1).
 
 #const n = 10.
 step(0..n).
 
+%Distance
+traveled_distance(T,I) :- truck(T), step(I).
+
 % Fluents
 fluent(at(T, V), inertial) :- truck(T), vertex(V).
 fluent(delivered(C), defined):- customer(C).
+fluent(traveled_distance(T,I), defined) :- truck(T), step(I).
 % Actions:
 action(move(T,V1,V2)):- truck(T), adj(V1,V2), V1 != V2.
 % Closed world assumption:
@@ -47,12 +52,21 @@ action(move(T,V1,V2)):- truck(T), adj(V1,V2), V1 != V2.
 -occurs(A,I) :- action(A), not occurs(A,I), step(I).
 % Causal laws:
 holds(at(T,V2),I+1) :- occurs(move(T,V1,V2),I), adj(V1,V2), truck(T), step(I).
+% Define the distance of each move action at step I
+move_distance(T, I, D) :- occurs(move(T, V1, V2), I), edge(V1, V2, D).
+holds(traveled_distance(T,TotalD),I+1) :- occurs(move(T, V1, V2), I),
+                                          edge(V1, V2, D),
+                                          holds(traveled_distance(T, PrevD),I),
+                                          truck(T),
+                                          step(I),
+                                          TotalD = PrevD + D.
 % State constraints:
 % Truck can only be in one location at a time
 :- holds(at(T, V1),I), holds(at(T, V2),I), truck(T), vertex(V1), vertex(V2), step(I), V1 != V2.
 % a customer is delivered if the truck is at the customer's location
 holds(delivered(C),I) :- holds(at(T,C),I), customer(C), truck(T), step(I).
 holds(delivered(C), I+1) :- holds(delivered(C), I), step(I).
+
 % Executability conditions
 % Cannot move from a vertex when the truck is not there
 :- occurs(move(T,V1,V2),I), not holds(at(T,V1),I), truck(T), vertex(V1), vertex(V2), step(I).
@@ -64,6 +78,7 @@ holds(F, I+1) :- holds(F,I),  not -holds(F,I+1), fluent(F,inertial), step(I).
 
 % Start state
 holds(at(t1,d1),0).
+holds(traveled_distance(t1,0),0).
 -holds(delivered(c1),0).
 -holds(delivered(c2),0).
 
@@ -89,9 +104,12 @@ success :- goal(I), I<=n.
 % Guess actions
 {occurs(A,I): action(A)}=1 :- step(I), not goal(I), I < n.
 
-% #show holds/2.
+#show holds/2.
 % #show delivered/1.
 % #show goal/1.
 % #show success/0.
 #show occurs/2.
+#show move_distance/3.
+#show success/0.
+#minimize {D: traveled_distance(T,D), truck(T)}.
 
