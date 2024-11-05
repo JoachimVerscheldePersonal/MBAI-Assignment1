@@ -43,7 +43,6 @@ traveled_distance(T,I) :- truck(T), step(I).
 % Fluents
 fluent(at(T, V), inertial) :- truck(T), vertex(V).
 fluent(delivered(C), defined):- customer(C).
-fluent(traveled_distance(T,I), defined) :- truck(T), step(I).
 % Actions:
 action(move(T,V1,V2)):- truck(T), adj(V1,V2), V1 != V2.
 % Closed world assumption:
@@ -54,12 +53,7 @@ action(move(T,V1,V2)):- truck(T), adj(V1,V2), V1 != V2.
 holds(at(T,V2),I+1) :- occurs(move(T,V1,V2),I), adj(V1,V2), truck(T), step(I).
 % Define the distance of each move action at step I
 move_distance(T, I, D) :- occurs(move(T, V1, V2), I), edge(V1, V2, D).
-holds(traveled_distance(T,TotalD),I+1) :- occurs(move(T, V1, V2), I),
-                                          edge(V1, V2, D),
-                                          holds(traveled_distance(T, PrevD),I),
-                                          truck(T),
-                                          step(I),
-                                          TotalD = PrevD + D.
+
 % State constraints:
 % Truck can only be in one location at a time
 :- holds(at(T, V1),I), holds(at(T, V2),I), truck(T), vertex(V1), vertex(V2), step(I), V1 != V2.
@@ -78,38 +72,23 @@ holds(F, I+1) :- holds(F,I),  not -holds(F,I+1), fluent(F,inertial), step(I).
 
 % Start state
 holds(at(t1,d1),0).
-holds(traveled_distance(t1,0),0).
 -holds(delivered(c1),0).
 -holds(delivered(c2),0).
 
-% occurs(move(t1,d1,v1),0).
-% occurs(move(t1,v1,v2),1).
-% occurs(move(t1,v2,v3),2).
-% occurs(move(t1,v3,c2),3).
-% occurs(move(t1,c2,v5),4).
-% occurs(move(t1,v5,v6),5).
-% occurs(move(t1,v6,c1),6).
-% occurs(move(t1,c1,v9),7).
-% occurs(move(t1,v9,v8),8).
-% occurs(move(t1,v8,d1),9).
-% occurs(move(t1,d1,v10),10).
+total_distance(TotalD) :- TotalD = #sum { D, I,T : move_distance(T,I,D) }.
 
 % Goal
 goal(I) :- step(I), holds(delivered(c1),I), holds(delivered(c2),I).
-
 success :- goal(I), I<=n.
-
 :- not success.
 
 % Guess actions
 {occurs(A,I): action(A)}=1 :- step(I), not goal(I), I < n.
 
 #show holds/2.
-% #show delivered/1.
-% #show goal/1.
-% #show success/0.
 #show occurs/2.
+#show total_distance/1.
 #show move_distance/3.
-#show success/0.
-#minimize {D: traveled_distance(T,D), truck(T)}.
+
+#minimize {TotalD: total_distance(TotalD)}.
 
