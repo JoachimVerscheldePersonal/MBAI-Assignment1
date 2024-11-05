@@ -94,3 +94,76 @@ success :- goal(I), I<=n.
 % #show goal/1.
 % #show success/0.
 #show occurs/2.
+
+% % Goal
+% goal :- customer(C) : delivered(C).
+% % Guess actions
+% % {occurs(move(T,V1,V2),I)}=1 :- truck(T), adj(V1,V2), step(I), not goal, I<n.
+% success :- goal.
+% :- not success.
+
+% Output regels
+
+%Action
+
+% occurs(move(T, StartLoc, EndLoc)):- 
+% % Causal Law: If an action occurs at time I, the position of the truck changes
+% holds(at(T, EndLoc), EndTime):- occurs(move(T, StartLoc, EndLoc), StartTime),
+%                                 holds(at(T, StartLoc), StartTime),
+%                                 distance(StartLoc, EndLoc, D),
+%                                 EndTime = StartTime + D I
+
+
+% % Action: Vrachtwagen verplaatst zich van locatie From naar locatie To
+% occurs(move(T, From, To), StartTime) :- 
+%     truck(T), location(From), location(To), time(StartTime),
+%     holds(at(T, From), StartTime), 
+%     distance(From, To, D), 
+%     EndTime = StartTime + D, 
+%     time(EndTime).
+
+% % Causal Law: Als een actie plaatsvindt, verandert de positie van de vrachtwagen
+% holds(at(T, To), EndTime) :- 
+%     occurs(move(T, From, To), StartTime), 
+%     distance(From, To, D), 
+%     EndTime = StartTime + D.
+
+% % State Constraint: De vrachtwagen kan slechts op één locatie tegelijk zijn
+% :- holds(at(T, L1), T2), holds(at(T, L2), T2), L1 != L2.
+
+% % Goal: Het doel is om alle klanten te leveren
+% goal(delivered(C)) :- customer(C).
+
+% % Fluent: De levering wordt als succesvol beschouwd wanneer het binnen het tijdsvenster is uitgevoerd
+% holds(delivered(C), T) :- 
+%     customer(C), holds(at(t1, C), T), 
+%     time_window(C, Min, Max), 
+%     Min <= T, T <= Max.
+
+% % Success Condition: Een levering is succesvol als het doel bereikt is
+% success(C) :- goal(delivered(C)), holds(delivered(C), _).
+
+% % Executability Condition: De vrachtwagen kan alleen bewegen als hij op de locatie is
+% occurs(move(T, From, To), StartTime) :- 
+%     holds(at(T, From), StartTime), 
+%     distance(From, To, D), 
+%     EndTime = StartTime + D, 
+%     time(EndTime).
+
+% % State Constraint: Elke klant moet op een bepaald moment geleverd worden
+% :- goal(delivered(C)), not holds(delivered(C), _).
+
+% % Minimalisatie van levertijden buiten het tijdsvenster (Penalty voor laat zijn)
+% penalty(C, Penalty) :- 
+%     holds(delivered(C), T), 
+%     time_window(C, _, Max), 
+%     Penalty = T - Max, 
+%     Penalty > 0.
+
+% % Optimalisatie: Minimaliseer de totale levertijd en penalties
+% #minimize { T : holds(delivered(C), T) ; Penalty : penalty(C, Penalty) }.
+
+
+
+
+
