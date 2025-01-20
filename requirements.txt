@@ -1,1 +1,6 @@
 clingo
+pandas
+matplotlib
+seaborn
+plotly
+nbformat

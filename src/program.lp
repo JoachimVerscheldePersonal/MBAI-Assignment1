@@ -28,43 +28,15 @@
 % edge((v8,v7,40)).
 % edge((v8,d1,40)).
 
-% truck("t1").
-% vertex(@vertices(10)).
-% edge(@edges(10)).
-% depot("v1").
-% customer(@sample_vertices(10,2,1)).
+% #const n_vertices = 100.
+% #const n_customers = 2.
+% #const n = 30.
 
-vertex("v1").
-vertex("v2").
-vertex("v3").
-vertex("v4").
-vertex("v5").
-vertex("v6").
-vertex("v7").
-vertex("v8").
-vertex("v9").
-vertex("v10").
-edge(("v10","v7",3)).
-edge(("v7","v4",7)).
-edge(("v4","v6",6)).
-edge(("v6","v3",8)).
-edge(("v3","v8",7)).
-edge(("v8","v9",6)).
-edge(("v9","v2",10)).
-edge(("v2","v1",2)).
-edge(("v1","v5",1)).
-edge(("v5","v10",3)).
-edge(("v2","v8",7)).
-edge(("v10","v9",7)).
-edge(("v4","v8",8)).
-edge(("v3","v4",5)).
-edge(("v3","v2",7)).
-edge(("v2","v6",6)).
-edge(("v9","v1",2)).
-customer("v4"). 
-customer("v6"). 
 truck("t1").
+vertex(@vertices(n_vertices)).
+edge(@edges(n_vertices)).
 depot("v1").
+customer(@sample_vertices(n_vertices, n_customers,1)).
 
 % Commutative property
 edge((V1,V2,D)) :- edge((V2,V1,D)).
@@ -72,7 +44,6 @@ edge((V1,V2,D)) :- edge((V2,V1,D)).
 % Adjacent vertices
 adj(V1,V2) :- vertex(V1), vertex(V2), edge((V1,V2,_)).
 
-#const n = 10.
 step(0..n).
 
 %Distance
