@@ -38,8 +38,8 @@ edge(@edges(n_vertices)).
 depot("v1").
 customer(@sample_vertices(n_vertices, n_customers,1)).
 
-% Commutative property
-edge((V1,V2,D)) :- edge((V2,V1,D)).
+% Undirected graph / commutative property
+edge(V1,V2,D) :- edge(V2,V1,D).
 
 % Adjacent vertices
 adj(V1,V2) :- vertex(V1), vertex(V2), edge((V1,V2,_)).
@@ -53,7 +53,7 @@ traveled_distance(T,I) :- truck(T), step(I).
 fluent(at(T, V), inertial) :- truck(T), vertex(V).
 fluent(delivered(C), defined):- customer(C).
 % Actions:
-action(move(T,V1,V2)):- truck(T), adj(V1,V2), V1 != V2.
+action(move(T,V1,V2)):- truck(T), adj(V1,V2).
 % Closed world assumption:
 -holds(F,I) :- fluent(F,inertial), not holds(F,I), step(I).
 
@@ -73,7 +73,6 @@ holds(delivered(C), I+1) :- holds(delivered(C), I), step(I).
 % Executability conditions
 % Cannot move from a vertex when the truck is not there
 :- occurs(move(T,V1,V2),I), not holds(at(T,V1),I), truck(T), vertex(V1), vertex(V2), step(I).
-:- occurs(move(T,V1,V2),I), not adj(V1,V2), truck(T), step(I).
 
 % Inertia axioms:
 holds(F, I+1) :- holds(F,I),  not -holds(F,I+1), fluent(F,inertial), step(I).
@@ -84,6 +83,8 @@ holds(at("t1","v1"),0).
 -holds(delivered(C),0):- customer(C).
 
 total_distance(TotalD) :- TotalD = #sum { D, I,T : move_distance(T,I,D) }.
+% This is the same but without the move_distance predicate, and a lot less performant
+% total_distance(TotalD) :- TotalD = #sum { D, I,T : holds(at(T,V1),I), holds(at(T,V2),I+1), edge(V1,V2,D) }.
 
 delivered_count(I, TotalDeliv):- TotalDeliv = #count { C : customer(C), holds(delivered(C), I) }, step(I).
 customer_count(I, TotalCust):- TotalCust = #count { C : customer(C) }, step(I).
